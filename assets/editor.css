@@ -1,0 +1,11 @@
+/* Selection belongs to Gutenberg; Disabled supplies native inert behavior. */
+.crom-editor-preview { cursor: default; }
+.editor-styles-wrapper .crom-editor-miniature,
+.editor-styles-wrapper .crom-editor-compact {
+    display: inline-block;
+    max-width: 100%;
+    margin-inline: 0;
+    vertical-align: top;
+}
+.editor-styles-wrapper .crom-editor-miniature { width: 300px; }
+.editor-styles-wrapper .crom-editor-compact { display: block; width: 100%; min-width: 0; }
