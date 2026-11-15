@@ -22,7 +22,7 @@ function crom_link_base_url(): string
 /** L’URL distante est configurée par un administrateur, jamais fournie par un bloc. */
 function crom_link_fetch(string $resource, array $query = []): array|WP_Error
 {
-    if (! in_array($resource, ['jeux','parties','evenements'], true)) {
+    if (! in_array($resource, ['jeux','parties','evenements','categories'], true)) {
         return new WP_Error('crom_resource', 'Ressource inconnue.');
     }
     $options = crom_link_options();
@@ -144,4 +144,17 @@ function crom_link_events_catalogue(): array|WP_Error
 {
     $data = crom_link_fetch('evenements', ['mode'=>'futurs', 'limite'=>50]);
     return is_wp_error($data) ? $data : $data['items'];
+}
+
+/** Catégories d’événements disponibles pour le filtre des blocs. */
+function crom_link_categories_catalogue(): array|WP_Error
+{
+    $data = crom_link_fetch('categories');
+    return is_wp_error($data) ? $data : $data['items'];
+}
+
+/** Identifiants de catégories valides, au format attendu par l’API (« 1,2 »). */
+function crom_link_categories_query(array $attributes): string
+{
+    return implode(',', array_unique(array_filter(array_map('absint', (array)($attributes['categories'] ?? [])))));
 }

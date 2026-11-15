@@ -16,6 +16,9 @@ function crom_link_event_when(array $event): string
 function crom_link_event_badges(array $event): string
 {
     $html = '<span class="badge badge-outline">'.esc_html($event['type'] ?? '').'</span>';
+    if (! empty($event['categorie']['nom'])) {
+        $html .= ' <span class="badge badge-ghost">'.esc_html($event['categorie']['nom']).'</span>';
+    }
     if (! empty($event['en_cours'])) {
         $html .= ' <span class="badge badge-success">En cours</span>';
     }
@@ -49,7 +52,11 @@ function crom_link_event_block(array $attributes): string
 /** Liste des événements à venir (en cours inclus). */
 function crom_link_events_list(array $attributes): string
 {
-    $data = crom_link_fetch('evenements', ['mode'=>'futurs', 'limite'=>min(50, max(1, (int)($attributes['limite'] ?? 6)))]);
+    $query = ['mode'=>'futurs', 'limite'=>min(50, max(1, (int)($attributes['limite'] ?? 6)))];
+    if (($categories = crom_link_categories_query($attributes)) !== '') {
+        $query['categories'] = $categories;
+    }
+    $data = crom_link_fetch('evenements', $query);
     if (is_wp_error($data)) {
         return crom_link_empty($data->get_error_message());
     }

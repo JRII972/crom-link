@@ -19,8 +19,8 @@
             attributes:{mode:FIELD('string','prochaines'),lien:FIELD('string',''),limite:FIELD('number',6),ouvertes:FIELD('boolean',false),evenement:FIELD('string',''),evenementId:FIELD('number',0),titre:FIELD('string','')}},
         {name:'crom/parties',title:'CROM — Parties',icon:'calendar-alt',description:'Parties à venir, ce week-end, une sélection par lien ou les parties d’un événement.',
             attributes:{mode:FIELD('string','prochaines'),lien:FIELD('string',''),presentation:FIELD('string','carte'),hauteurCarte:FIELD('number',320),limite:FIELD('number',6),ouvertes:FIELD('boolean',false),evenement:FIELD('string',''),evenementId:FIELD('number',0),titre:FIELD('string','')}},
-        {name:'crom/evenement',title:'CROM — Événement',icon:'megaphone',description:'Événements à venir, événement en cours ou choisi, en liste ou en cartes.',attributes:{...EVENT_SOURCE,description:FIELD('boolean',true),presentation:FIELD('string','carte'),limite:FIELD('number',6),titre:FIELD('string','')}},
-        {name:'crom/evenements-liste',supports:{inserter:false},title:'CROM — Liste des événements',icon:'calendar',description:'Tous les événements en cours et à venir.',attributes:{limite:FIELD('number',6),presentation:FIELD('string','carte'),titre:FIELD('string','')}},
+        {name:'crom/evenement',title:'CROM — Événement',icon:'megaphone',description:'Événements à venir, événement en cours ou choisi, en liste ou en cartes.',attributes:{...EVENT_SOURCE,description:FIELD('boolean',true),presentation:FIELD('string','carte'),limite:FIELD('number',6),titre:FIELD('string',''),categories:FIELD('array',[])}},
+        {name:'crom/evenements-liste',supports:{inserter:false},title:'CROM — Liste des événements',icon:'calendar',description:'Tous les événements en cours et à venir.',attributes:{limite:FIELD('number',6),presentation:FIELD('string','carte'),titre:FIELD('string',''),categories:FIELD('array',[])}},
         {name:'crom/evenement-parties',title:'CROM — Parties d’un événement',icon:'calendar-alt',description:'Parties liées au prochain événement ou à un événement choisi.',attributes:{...EVENT_SOURCE,presentation:FIELD('string','carte'),limite:FIELD('number',12),ouvertes:FIELD('boolean',false),hauteurCarte:FIELD('number',320),titre:FIELD('string','')}},
         {name:'crom/evenement-jeux',title:'CROM — Jeux d’un événement',icon:'games',description:'Jeux proposés dans les parties d’un événement.',attributes:{...EVENT_SOURCE,limite:FIELD('number',12),titre:FIELD('string',''),imageCote:FIELD('string','gauche')}},
         {name:'crom/evenement-helloasso',title:'CROM — Bouton HelloAsso',icon:'tickets-alt',description:'Bouton vers la page HelloAsso d’un événement payant.',attributes:{...EVENT_SOURCE,libelle:FIELD('string','Réserver sur HelloAsso')}},
@@ -31,7 +31,7 @@
             event.preventDefault();
             wp.data.dispatch('core/block-editor').selectBlock(props.clientId);
         }
-        const [games, setGames] = useState([]), [events, setEvents] = useState([]), [error, setError] = useState('');
+        const [games, setGames] = useState([]), [events, setEvents] = useState([]), [categories, setCategories] = useState([]), [error, setError] = useState('');
         const isCover = props.name === 'crom/cover', isGame = ['crom/jeu', 'crom/jeu-miniature'].includes(props.name);
         const isMiniature = props.name === 'crom/jeu-miniature', isCompact = props.name === 'crom/parties-compactes';
         const eventBlock = EVENT_BLOCKS.includes(props.name), isSessionsBlock = ['crom/parties','crom/parties-compactes'].includes(props.name);
@@ -43,6 +43,9 @@
             }
             if (needsEvents) {
                 wp.apiFetch({ path: '/crom-link/v1/evenements' }).then(function (data) { if (active) setEvents(data); }).catch(function () { if (active) setError('Événements indisponibles. Vérifiez Réglages → CROM.'); });
+            }
+            if (props.name === 'crom/evenement' || props.name === 'crom/evenements-liste') {
+                wp.apiFetch({ path: '/crom-link/v1/categories' }).then(function (data) { if (active) setCategories(data); }).catch(function () {});
             }
             return function () { active = false; };
         }, []);
@@ -92,6 +95,7 @@
                 control(SelectControl,'layout',{label:'Présentation',value:a.presentation,options:[{label:'Cartes comme sur l’accueil',value:'carte'},{label:'Grandes cartes',value:'grande'},{label:'Cartes compactes',value:'compacte'},{label:'Tableau',value:'table'}],onChange:presentation=>set({presentation})});
                 control(ToggleControl,'open',{label:'Uniquement les parties ouvertes avec des places',checked:a.ouvertes,onChange:ouvertes=>set({ouvertes})});
             }
+            if ((listOnly || (n === 'crom/evenement' && a.source === 'futurs')) && categories.length) control(FormTokenField,'categories',{label:'Catégories',value:(a.categories || []).map(id=>categories.find(c=>c.id===id)?.nom).filter(Boolean),suggestions:categories.map(c=>c.nom),help:'Aucune catégorie sélectionnée : tous les événements. Sinon, au moins une des catégories choisies.',onChange:tokens=>set({categories:tokens.map(name=>categories.find(c=>c.nom===name)?.id).filter(Boolean)}),__experimentalValidateInput:name=>categories.some(c=>c.nom===name)});
             if (listOnly || (n === 'crom/evenement' && a.source === 'futurs') || n === 'crom/evenement-jeux' || n === 'crom/evenement-parties') control(RangeControl,'limit',{label:'Nombre maximum',value:a.limite,min:1,max:50,onChange:limite=>set({limite})});
         } else {
             control(SelectControl,'mode',{label:'Parties à afficher',value:a.mode,options:[{label:'Prochaines ouvertes à l’inscription',value:'prochaines'},{label:'Ce week-end (samedi et dimanche)',value:'weekend'},{label:'Une partie ou campagne par son lien',value:'lien'}],onChange:mode=>set({mode})});

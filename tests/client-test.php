@@ -169,3 +169,11 @@ $eventFixtures['en_cours'] = []; $cache = [];
 check(!str_contains(crom_link_event_block(['source'=>'en_cours']), $next['nom']), 'Le mode en cours seul affiche un événement futur');
 check(str_contains(crom_link_event_block(['source'=>'prochain']), $next['nom']), 'Le mode automatique ne passe plus au prochain événement');
 echo "Bloc Événement unique : prochains, choisi, en cours et automatique en liste ou cartes : OK\n";
+
+$eventFixtures = ['futurs'=>[$event]]; $cache = [];
+$html = crom_link_events_list(['categories'=>['3', 0, 5, 3, 'x']]);
+check(str_contains($requestedUrl, 'categories=3%2C5'), 'Filtre de catégories non transmis à CROM');
+crom_link_events_list([]);
+check(!str_contains($requestedUrl, 'categories='), 'Filtre de catégories ajouté sans sélection');
+check(str_contains(crom_link_event_badges(['type'=>'Tournoi', 'categorie'=>['id'=>3, 'nom'=>'<b>Soirée</b>']]), '&lt;b&gt;Soirée&lt;/b&gt;'), 'Catégorie absente ou non échappée');
+echo "Filtre des événements par catégories : OK\n";

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CROM — Jeux et parties
  * Description: Bannières, jeux classés, prochaines parties et événements de CROM dans l’éditeur de blocs.
- * Version: 1.7.3
+ * Version: 1.8.0
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: windpress
@@ -39,10 +39,10 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 add_action('init', function (): void {
     $base = plugin_dir_url(CROM_LINK_FILE).'assets/';
-    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.7.3', true);
-    wp_register_script('crom-link-front', $base.'front.js', [], '1.7.3', true);
-    wp_register_style('crom-link', $base.'style.css', [], '1.7.3');
-    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.7.3');
+    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.8.0', true);
+    wp_register_script('crom-link-front', $base.'front.js', [], '1.8.0', true);
+    wp_register_style('crom-link', $base.'style.css', [], '1.8.0');
+    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.8.0');
     $common = ['api_version'=>3, 'editor_script'=>'crom-link-editor', 'editor_style'=>'crom-link-editor', 'style'=>'crom-link', 'supports'=>['html'=>false, 'align'=>['wide','full']]];
     $schema = static fn ($type, $default) => ['type'=>$type, 'default'=>$default];
     register_block_type('crom/cover', $common + ['render_callback'=>'crom_link_cover', 'view_script'=>'crom-link-front', 'attributes'=>[
@@ -70,7 +70,7 @@ add_action('init', function (): void {
     ]]);
     // Blocs événements : « source » vaut prochain ou selection (avec evenementId).
     $event = ['source'=>$schema('string','prochain'), 'evenementId'=>$schema('number',0), 'serie'=>$schema('string','')];
-    $eventDisplay = $event + ['description'=>$schema('boolean',true), 'presentation'=>$schema('string','carte'), 'limite'=>$schema('number',6), 'titre'=>$schema('string','')];
+    $eventDisplay = $event + ['categories'=>['type'=>'array', 'items'=>['type'=>'integer'], 'default'=>[]], 'description'=>$schema('boolean',true), 'presentation'=>$schema('string','carte'), 'limite'=>$schema('number',6), 'titre'=>$schema('string','')];
     register_block_type('crom/evenement', $common + ['render_callback'=>'crom_link_event_block', 'attributes'=>$eventDisplay]);
     // Les blocs déjà enregistrés deviennent des fiches ; une seule entrée est proposée à l’insertion.
     foreach (['crom/evenement-banniere', 'crom/evenement-en-cours'] as $name) {
@@ -79,7 +79,7 @@ add_action('init', function (): void {
         ]);
     }
     register_block_type('crom/evenements-liste', array_replace($common, ['supports'=>['html'=>false, 'inserter'=>false]]) + ['render_callback'=>'crom_link_events_list', 'attributes'=>[
-        'limite'=>$schema('number',6), 'presentation'=>$schema('string','carte'), 'titre'=>$schema('string',''),
+        'limite'=>$schema('number',6), 'presentation'=>$schema('string','carte'), 'titre'=>$schema('string',''), 'categories'=>['type'=>'array', 'items'=>['type'=>'integer'], 'default'=>[]],
     ]]);
     register_block_type('crom/evenement-parties', $common + ['render_callback'=>'crom_link_event_sessions', 'attributes'=>$event + [
         'presentation'=>$schema('string','carte'), 'limite'=>$schema('number',12), 'ouvertes'=>$schema('boolean',false), 'hauteurCarte'=>$schema('number',320), 'titre'=>$schema('string',''),
@@ -108,6 +108,11 @@ add_action('rest_api_init', function (): void {
         'callback'=>static function () {
             $events = crom_link_events_catalogue();
             return is_wp_error($events) ? new WP_Error('crom_unavailable', 'Les événements CROM sont indisponibles.', ['status'=>503]) : array_map(static fn ($e) => ['id'=>(int)$e['id'], 'nom'=>(string)$e['nom'], 'date_label'=>(string)($e['date_label'] ?? ''), 'type_code'=>(string)($e['type_code'] ?? '')], $events);
+        }]);
+    register_rest_route('crom-link/v1', '/categories', ['methods'=>'GET', 'permission_callback'=>static fn () => current_user_can('edit_posts'),
+        'callback'=>static function () {
+            $categories = crom_link_categories_catalogue();
+            return is_wp_error($categories) ? new WP_Error('crom_unavailable', 'Les catégories CROM sont indisponibles.', ['status'=>503]) : array_map(static fn ($c) => ['id'=>(int)$c['id'], 'nom'=>(string)$c['nom']], $categories);
         }]);
 });
 
