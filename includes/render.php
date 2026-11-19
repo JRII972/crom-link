@@ -19,7 +19,7 @@ function crom_link_empty(string $message): string
 function crom_link_miniature_card(array $game, array $attributes): string
 {
     ob_start(); ?>
-    <a class="card card-side card-sm bg-base-200 shadow-sm overflow-hidden crom-clickable-card crom-game-miniature <?php echo ($attributes['imageCote'] ?? '') === 'droite' ? 'crom-image-right' : ''; ?>" href="<?php echo esc_url($game['url'] ?? ''); ?>" aria-label="Découvrir <?php echo esc_attr($game['nom']); ?>">
+    <a class="card card-side card-sm bg-base-200 shadow-sm overflow-hidden crom-clickable-card crom-game-miniature <?php echo ($attributes['imageCote'] ?? '') === 'droite' ? 'crom-image-right' : ''; ?>" href="<?php echo esc_url(crom_link_destination_url($game['url'] ?? '')); ?>" aria-label="Découvrir <?php echo esc_attr($game['nom']); ?>">
         <?php if (! empty($game['image'])) { ?><figure><img src="<?php echo esc_url($game['image']); ?>" alt="<?php echo esc_attr($game['nom']); ?>" loading="lazy"></figure><?php } ?>
         <div class="card-body min-w-0 p-3 gap-1">
             <h3 class="card-title text-sm leading-tight line-clamp-2"><?php echo esc_html($game['nom']); ?></h3>
@@ -85,7 +85,7 @@ function crom_link_game(array $attributes, bool $miniature = false): string
     }
     ob_start(); ?>
     <section <?php echo crom_link_wrapper(); ?>>
-        <a class="card lg:card-side bg-base-200 shadow crom-clickable-card" href="<?php echo esc_url($game['url'] ?? ''); ?>" aria-label="Découvrir <?php echo esc_attr($game['nom']); ?>">
+        <a class="card lg:card-side bg-base-200 shadow crom-clickable-card" href="<?php echo esc_url(crom_link_destination_url($game['url'] ?? '')); ?>" aria-label="Découvrir <?php echo esc_attr($game['nom']); ?>">
             <?php if (! empty($game['image'])) { ?><figure class="lg:w-1/3 shrink-0"><img class="w-full max-h-80 object-contain" src="<?php echo esc_url($game['image']); ?>" alt="<?php echo esc_attr($game['nom']); ?>" loading="lazy"></figure><?php } ?>
             <div class="card-body">
                 <span class="badge badge-outline"><?php echo esc_html($game['type'] ?? ''); ?></span>
@@ -182,7 +182,7 @@ function crom_link_cover(array $attributes): string
             <?php foreach ($slides as $index=>$slide) {
                 $label = esc_attr('Découvrir '.$slide['title'].' — '.($index+1).' sur '.$count);
                 if ($gallery) { ?>
-                <a class="carousel-item w-full crom-cover-slide crom-cover-gallery crom-clickable-card bg-base-200 text-base-content" href="<?php echo esc_url($slide['url']); ?>" aria-label="<?php echo $label; ?>">
+                <a class="carousel-item w-full crom-cover-slide crom-cover-gallery crom-clickable-card bg-base-200 text-base-content" href="<?php echo esc_url(crom_link_destination_url($slide['url'])); ?>" aria-label="<?php echo $label; ?>">
                     <div class="flex w-full flex-col-reverse md:flex-row">
                         <div class="flex min-w-0 flex-1 flex-col justify-center gap-2 p-6 md:w-3/5 md:p-10">
                             <div class="flex flex-wrap items-center gap-2"><?php foreach ($slide['badges'] as $badge) { ?><span class="badge badge-secondary badge-sm"><?php echo esc_html($badge); ?></span><?php } ?></div>
@@ -195,7 +195,7 @@ function crom_link_cover(array $attributes): string
                     </div>
                 </a>
             <?php } else { ?>
-                <a class="carousel-item w-full card image-full crom-cover-slide crom-clickable-card <?php echo $minimal ? 'crom-cover-minimal' : ''; ?>" href="<?php echo esc_url($slide['url']); ?>" aria-label="<?php echo $label; ?>">
+                <a class="carousel-item w-full card image-full crom-cover-slide crom-clickable-card <?php echo $minimal ? 'crom-cover-minimal' : ''; ?>" href="<?php echo esc_url(crom_link_destination_url($slide['url'])); ?>" aria-label="<?php echo $label; ?>">
                     <figure><img class="w-full h-full object-cover" src="<?php echo esc_url($slide['banner']); ?>" alt="Bannière de <?php echo esc_attr($slide['title']); ?>" loading="<?php echo $index===0 ? 'eager' : 'lazy'; ?>"></figure>
                     <div class="card-body <?php echo $minimal ? 'justify-end items-start' : 'justify-center'; ?>">
                         <?php if ($custom !== '') { ?><h2 class="card-title text-3xl"><?php echo esc_html($custom); ?></h2><?php } ?>
@@ -266,7 +266,7 @@ function crom_link_sessions(array $attributes): string
                 <tbody><?php foreach ($items as $item) { ?><tr>
                     <th scope="row"><?php echo esc_html($item['nom']); ?><?php if (! empty($item['reserve_aux_majeurs'])) { ?><span class="badge badge-warning badge-outline" title="Réservé aux personnes majeures">+18</span><?php } ?><span class="block text-sm font-normal"><?php echo esc_html($item['jeu'] ?? ''); ?></span></th>
                     <td><?php echo esc_html($item['date_label'].' · '.$item['debut'].'–'.$item['fin']); ?></td><td><?php echo esc_html($item['mj'] ?? ''); ?></td><td><?php echo esc_html($item['lieu_court'] ?? $item['lieu'] ?? ''); ?></td>
-                    <td><?php echo esc_html(crom_link_players($item)); ?></td><td><a class="btn btn-sm" href="<?php echo esc_url($item['url']); ?>" aria-label="Voir <?php echo esc_attr($item['nom']); ?>">Voir</a></td>
+                    <td><?php echo esc_html(crom_link_players($item)); ?></td><td><a class="btn btn-sm" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>" aria-label="Voir <?php echo esc_attr($item['nom']); ?>">Voir</a></td>
                 </tr><?php } ?></tbody>
             </table></div>
         <?php } elseif ($compact) { ?>
@@ -283,7 +283,7 @@ function crom_link_sessions(array $attributes): string
                 if ($day !== '') { ?><h3 class="font-semibold text-xl mt-6 mb-3"><?php echo esc_html($day); ?></h3><?php } ?>
             <div class="<?php echo $wide ? 'grid gap-4 min-w-0' : 'crom-cards-grid'; ?>">
                 <?php foreach ($sessions as $item) { ?>
-                    <a class="card bg-base-200 shadow-sm overflow-hidden crom-clickable-card <?php echo $wide ? 'sm:card-side crom-partie-wide' : ''; ?>" href="<?php echo esc_url($item['url']); ?>" aria-label="Voir la partie <?php echo esc_attr($item['nom']); ?>"<?php if ($wide) { ?> style="--crom-partie-height:<?php echo $height; ?>px"<?php } ?>>
+                    <a class="card bg-base-200 shadow-sm overflow-hidden crom-clickable-card <?php echo $wide ? 'sm:card-side crom-partie-wide' : ''; ?>" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>" aria-label="Voir la partie <?php echo esc_attr($item['nom']); ?>"<?php if ($wide) { ?> style="--crom-partie-height:<?php echo $height; ?>px"<?php } ?>>
                         <?php if (! empty($item['image'])) { ?><figure class="<?php echo $wide ? 'sm:w-1/3 shrink-0' : ''; ?>"><img class="w-full h-52 object-cover" src="<?php echo esc_url($item['image']); ?>" alt="<?php echo esc_attr($item['jeu'] ?: $item['nom']); ?>" loading="lazy"></figure><?php } ?>
                         <div class="card-body min-w-0">
                             <?php if ($wide) { ?><div class="crom-partie-wide-content"><?php } ?>
@@ -321,13 +321,13 @@ function crom_link_session_compact_card(array $item): string
     };
     ob_start(); ?>
     <article class="card card-side card-sm bg-base-200 shadow-sm overflow-hidden w-full min-w-0 min-h-44 crom-session-compact">
-        <?php if (! empty($item['image'])) { ?><figure class="hidden md:block relative w-1/4 shrink-0 self-stretch"><a class="absolute inset-0" href="<?php echo esc_url($item['url']); ?>"><img class="h-full w-full object-cover" src="<?php echo esc_url($item['image']); ?>" alt="<?php echo esc_attr($item['jeu'] ?? $item['nom']); ?>" loading="lazy"></a></figure><?php } ?>
+        <?php if (! empty($item['image'])) { ?><figure class="hidden md:block relative w-1/4 shrink-0 self-stretch"><a class="absolute inset-0" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>"><img class="h-full w-full object-cover" src="<?php echo esc_url($item['image']); ?>" alt="<?php echo esc_attr($item['jeu'] ?? $item['nom']); ?>" loading="lazy"></a></figure><?php } ?>
         <div class="card-body min-w-0 p-3 gap-1 justify-between">
             <div class="flex flex-wrap items-center gap-1 text-xs text-base-content/70"><span class="badge badge-outline badge-xs <?php echo esc_attr($color); ?>" title="<?php echo esc_attr($type); ?>"><?php echo esc_html($badge); ?></span><span class="truncate"><?php echo esc_html($item['jeu'] ?? ''); ?></span></div>
-            <h3 class="card-title text-sm leading-tight line-clamp-2"><a class="link-hover" href="<?php echo esc_url($item['url']); ?>"><?php echo esc_html($item['nom']); ?></a></h3>
+            <h3 class="card-title text-sm leading-tight line-clamp-2"><a class="link-hover" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>"><?php echo esc_html($item['nom']); ?></a></h3>
             <div class="font-medium text-xs truncate"><?php echo esc_html($item['mj'] ?? 'MJ non renseigné'); ?></div>
             <button type="button" class="flex flex-wrap items-center gap-1 text-left" data-crom-details="<?php echo esc_attr($uid); ?>" aria-haspopup="dialog" aria-controls="<?php echo esc_attr($uid); ?>" aria-label="Informations complémentaires pour <?php echo esc_attr($item['nom']); ?>"><time class="badge badge-soft badge-sm" datetime="<?php echo esc_attr($item['date']); ?>"><?php echo esc_html($item['date_label'].' · '.$item['debut'].'–'.$item['fin']); ?></time><span class="badge badge-ghost badge-sm">Détails</span></button>
-            <div class="card-actions text-xs font-medium mt-1"><span class="badge badge-outline badge-xs"><?php echo esc_html($item['etat'] ?? ''); ?></span><a class="link-hover" href="<?php echo esc_url($item['url']); ?>">Voir sur CROM</a></div>
+            <div class="card-actions text-xs font-medium mt-1"><span class="badge badge-outline badge-xs"><?php echo esc_html($item['etat'] ?? ''); ?></span><a class="link-hover" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>">Voir sur CROM</a></div>
         </div>
         <dialog id="<?php echo esc_attr($uid); ?>" class="modal modal-middle" aria-labelledby="<?php echo esc_attr($uid); ?>-title">
             <div class="modal-box w-11/12 max-w-2xl">
@@ -340,7 +340,7 @@ function crom_link_session_compact_card(array $item): string
                     <div><dt class="font-semibold">Maître du jeu</dt><dd><?php echo esc_html($item['mj'] ?? 'Non renseigné'); ?></dd></div>
                 </dl>
                 <?php if (! empty($item['description'])) { ?><section class="mt-5"><h3 class="font-semibold">À propos</h3><p class="mt-1 text-sm break-words"><?php echo esc_html($item['description']); ?></p></section><?php } ?>
-                <div class="modal-action"><a class="btn btn-sm" href="<?php echo esc_url($item['url']); ?>">Voir sur CROM</a><form method="dialog"><button class="btn btn-sm">Fermer</button></form></div>
+                <div class="modal-action"><a class="btn btn-sm" href="<?php echo esc_url(crom_link_destination_url($item['url'])); ?>">Voir sur CROM</a><form method="dialog"><button class="btn btn-sm">Fermer</button></form></div>
             </div>
             <form method="dialog" class="modal-backdrop"><button>Fermer</button></form>
         </dialog>

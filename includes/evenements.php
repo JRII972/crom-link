@@ -15,7 +15,7 @@ function crom_link_event_when(array $event): string
 
 function crom_link_event_badges(array $event): string
 {
-    $html = '<span class="badge badge-outline">'.esc_html($event['type'] ?? '').'</span>';
+    $html = '';
     if (! empty($event['categorie']['nom'])) {
         $html .= ' <span class="badge badge-ghost">'.esc_html($event['categorie']['nom']).'</span>';
     }
@@ -75,7 +75,7 @@ function crom_link_events_html(array $events, array $attributes): string
             <ul class="list bg-base-200 rounded-box shadow-sm">
                 <?php foreach ($events as $event) { ?>
                     <li class="flex flex-wrap items-center gap-3 p-4">
-                        <div class="min-w-0 flex-1 basis-48"><a class="font-semibold link-hover" href="<?php echo esc_url($event['url'] ?? ''); ?>"><?php echo esc_html($event['nom']); ?></a>
+                        <div class="min-w-0 flex-1 basis-48"><a class="font-semibold link-hover" href="<?php echo esc_url(crom_link_destination_url($event['url'] ?? '')); ?>"><?php echo esc_html($event['nom']); ?></a>
                             <div class="text-sm"><time datetime="<?php echo esc_attr($event['debut'] ?? ''); ?>"><?php echo esc_html(crom_link_event_when($event)); ?></time><?php if (! empty($event['lieu'])) { ?> · <?php echo esc_html($event['lieu']); } ?></div></div>
                         <div class="flex flex-wrap gap-1"><?php echo crom_link_event_badges($event); ?></div>
                     </li>
@@ -88,10 +88,10 @@ function crom_link_events_html(array $events, array $attributes): string
                         <?php if (! empty($event['image'])) { ?><figure><img class="w-full h-full object-cover" src="<?php echo esc_url($event['image']); ?>" alt="<?php echo esc_attr($event['nom']); ?>" loading="lazy"></figure><?php } ?>
                         <div class="card-body min-w-0 gap-2 p-4">
                             <div class="flex flex-wrap gap-2"><?php echo crom_link_event_badges($event); ?></div>
-                            <h3 class="card-title text-lg line-clamp-2"><a class="link-hover" href="<?php echo esc_url($event['url'] ?? ''); ?>"><?php echo esc_html($event['nom']); ?></a></h3>
+                            <h3 class="card-title text-lg line-clamp-2"><a class="link-hover" href="<?php echo esc_url(crom_link_destination_url($event['url'] ?? '')); ?>"><?php echo esc_html($event['nom']); ?></a></h3>
                             <p class="text-sm"><time datetime="<?php echo esc_attr($event['debut'] ?? ''); ?>"><?php echo esc_html(crom_link_event_when($event)); ?></time><?php if (! empty($event['lieu'])) { ?> · <?php echo esc_html($event['lieu']); } ?></p>
                             <?php if (! empty($attributes['description']) && ! empty($event['description'])) { ?><p class="text-sm line-clamp-2"><?php echo esc_html($event['description']); ?></p><?php } ?>
-                            <div class="card-actions"><a class="btn btn-sm" href="<?php echo esc_url($event['url'] ?? ''); ?>">Voir sur CROM</a><?php echo crom_link_event_paylink($event, 'Réserver sur HelloAsso', 'btn btn-sm btn-primary'); ?></div>
+                            <div class="card-actions"><a class="btn btn-sm" href="<?php echo esc_url(crom_link_destination_url($event['url'] ?? '')); ?>">Voir sur CROM</a><?php echo crom_link_event_paylink($event, 'Réserver sur HelloAsso', 'btn btn-sm btn-primary'); ?></div>
                         </div>
                     </article>
                 <?php } ?>
@@ -188,7 +188,7 @@ function crom_link_event_shortcode(array|string $attributes, ?string $content = 
         'crom_evenement_jour' => esc_html($jour),
         'crom_evenement_mois' => esc_html($moisAnnee),
         'crom_evenement_lieu' => esc_html($event['lieu'] ?? ''),
-        'crom_evenement_url' => esc_url($event['url'] ?? ''),
+        'crom_evenement_url' => esc_url(crom_link_destination_url($event['url'] ?? '')),
         'crom_evenement_type' => esc_html($event['type'] ?? ''),
         'crom_evenement_resume' => esc_html(wp_trim_words(wp_strip_all_tags($event['description'] ?? ''), 32)),
         'crom_evenement_date' => esc_html($event['date_label'] ?? ''),

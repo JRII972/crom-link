@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CROM — Jeux et parties
  * Description: Bannières, jeux classés, prochaines parties et événements de CROM dans l’éditeur de blocs.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: windpress
@@ -39,10 +39,10 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 add_action('init', function (): void {
     $base = plugin_dir_url(CROM_LINK_FILE).'assets/';
-    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.8.0', true);
-    wp_register_script('crom-link-front', $base.'front.js', [], '1.8.0', true);
-    wp_register_style('crom-link', $base.'style.css', [], '1.8.0');
-    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.8.0');
+    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.8.1', true);
+    wp_register_script('crom-link-front', $base.'front.js', [], '1.8.1', true);
+    wp_register_style('crom-link', $base.'style.css', [], '1.8.1');
+    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.8.1');
     $common = ['api_version'=>3, 'editor_script'=>'crom-link-editor', 'editor_style'=>'crom-link-editor', 'style'=>'crom-link', 'supports'=>['html'=>false, 'align'=>['wide','full']]];
     $schema = static fn ($type, $default) => ['type'=>$type, 'default'=>$default];
     register_block_type('crom/cover', $common + ['render_callback'=>'crom_link_cover', 'view_script'=>'crom-link-front', 'attributes'=>[

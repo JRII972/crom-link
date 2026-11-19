@@ -35,7 +35,7 @@ function wp_enqueue_script($handle) {}
 function wp_unique_id($prefix) { static $id=0; return $prefix.(++$id); }
 function esc_html($v) { return htmlspecialchars((string)$v,ENT_QUOTES); }
 function esc_attr($v) { return esc_html($v); }
-function esc_url($v) { return preg_match('#^https?://#',$v) ? htmlspecialchars($v,ENT_QUOTES) : ''; }
+function esc_url($v) { return preg_match('#^(?:https?://|/(?!/))#',$v) ? htmlspecialchars($v,ENT_QUOTES) : ''; }
 function esc_url_raw($v, $protocols) { return preg_match('#^[a-z]+:#i', $v) && !preg_match('#^https?://#i', $v) ? '' : $v; }
 function shortcode_atts($defaults, $attributes, $tag = '') { return array_replace($defaults, array_intersect_key($attributes, $defaults)); }
 function wp_strip_all_tags($value) { return strip_tags($value); }
@@ -177,3 +177,82 @@ crom_link_events_list([]);
 check(!str_contains($requestedUrl, 'categories='), 'Filtre de catégories ajouté sans sélection');
 check(str_contains(crom_link_event_badges(['type'=>'Tournoi', 'categorie'=>['id'=>3, 'nom'=>'<b>Soirée</b>']]), '&lt;b&gt;Soirée&lt;/b&gt;'), 'Catégorie absente ou non échappée');
 echo "Filtre des événements par catégories : OK\n";
+
+// Destination unique : validation, tous les rendus et retour immédiat aux liens d’origine.
+$options = [];
+check(crom_link_destination_url('https://association.fr/crom/jeu/1') === 'https://association.fr/crom/jeu/1', 'Remplacement activé par défaut');
+foreach (['/contact/', '/contact/?source=crom&vue=jeu#message', 'https://autre.fr/attente?source=crom#infos'] as $destination) {
+    $saved = $sanitize(['url'=>'/crom', 'override_enabled'=>'1', 'override_url'=>$destination]);
+    check($saved['override_enabled'] === true && $saved['override_url'] === $destination, 'Destination temporaire altérée');
+}
+$options = ['url'=>'/crom', 'override_enabled'=>true, 'override_url'=>'/contact/'];
+foreach (['', '//evil.example', '/\\evil.example', 'javascript:alert(1)', 'data:text/html,test', 'ftp://example.org', 'https://user:pass@example.org', 'https://', 'attente', "https://example.org/\ncontact", ['url'=>'/contact/']] as $destination) {
+    check($sanitize(['url'=>'/crom', 'override_enabled'=>'1', 'override_url'=>$destination]) === crom_link_options(), 'Destination invalide enregistrée');
+}
+$saved = $sanitize(['url'=>'/crom', 'override_url'=>'/contact/']);
+check($saved['override_enabled'] === false && $saved['override_url'] === '/contact/', 'Désactivation : destination perdue ou remplacement encore actif');
+$options = ['override_enabled'=>true, 'override_url'=>'javascript:alert(1)'];
+check(crom_link_destination_url('/crom/jeu/1') === '/crom/jeu/1', 'Ancienne configuration invalide utilisée au rendu');
+$options = []; $cache = []; $offline = false;
+$record = ['id'=>12, 'nom'=>'Jeu et partie de test', 'type'=>'One-shot', 'type_code'=>'JDR', 'jeu'=>'Jeu de test',
+    'date'=>'2026-11-14', 'date_label'=>'samedi 14 novembre', 'debut'=>'10:00', 'fin'=>'18:00', 'etat'=>'Ouverte',
+    'image'=>'https://association.fr/crom/images/test.webp', 'banniere'=>'https://association.fr/crom/images/banner.webp',
+    'url'=>'https://association.fr/crom/partie/12'];
+$fixtures = [$record];
+$eventFixtures = ['en_cours'=>[$event], 'prochain'=>[$next], 'futurs'=>[$event, $next], 'id'=>[$event]];
+$initial = crom_link_game(['jeuId'=>12]);
+$initialCalls = $calls;
+foreach (['https://association.fr/attente?source=crom&vue=jeu#message', '/contact/?source=crom&vue=jeu#message'] as $destination) {
+    $options = ['override_enabled'=>true, 'override_url'=>$destination];
+    $game = crom_link_game(['jeuId'=>12]);
+    check($calls === $initialCalls, 'Le changement de destination invalide le cache API');
+    check(str_contains($game, 'href="'.esc_url($destination).'"'), 'Données en cache : destination non remplacée');
+    $renders = [
+        $game,
+        crom_link_game_miniature(['jeuId'=>12]),
+        crom_link_cover(['jeuId'=>12]),
+        crom_link_cover(['mode'=>'toutes', 'presentation'=>'galerie']),
+        crom_link_cover(['mode'=>'parties']),
+        crom_link_cover(['mode'=>'evenement']),
+        crom_link_event_games(['source'=>'selection', 'evenementId'=>4]),
+        crom_link_event_sessions(['source'=>'selection', 'evenementId'=>4]),
+    ];
+    foreach (['cartes', 'grande', 'table', 'compacte'] as $presentation) {
+        $renders[] = crom_link_sessions(['presentation'=>$presentation]);
+        $renders[] = crom_link_sessions(['mode'=>'lien', 'lien'=>'/crom/campagne/12', 'presentation'=>$presentation]);
+    }
+    foreach (['carte', 'liste'] as $presentation) {
+        $renders[] = crom_link_events_html([$event], ['presentation'=>$presentation]);
+        $renders[] = crom_link_events_list(['presentation'=>$presentation]);
+    }
+    foreach ($renders as $index=>$html) {
+        preg_match_all('/href="([^"]*)"/', $html, $links);
+        check(count($links[1]) > 0, 'Rendu sans liens : '.$index);
+        foreach ($links[1] as $link) {
+            check(in_array($link, [esc_url($destination), esc_url($event['lien_paiement'])], true), 'Lien CROM non remplacé dans le rendu '.$index);
+        }
+    }
+    check(str_contains($game, 'src="'.$record['image'].'"'), 'Image remplacée par la destination temporaire');
+    check(crom_link_event_shortcode([], null, 'crom_evenement_url') === esc_url($destination), 'URL shortcode non remplacée');
+    check(str_contains(crom_link_event_paylink($event), 'href="'.$event['lien_paiement'].'"'), 'Paiement HelloAsso remplacé');
+    check(crom_link_reference('/crom/campagne/12') === ['mode'=>'campagne', 'id'=>12], 'Lecture des liens de sélection modifiée');
+    check(str_starts_with($requestedUrl, 'https://association.fr/crom/vitrine/v1/'), 'API redirigée vers la page temporaire');
+    $initialCalls = $calls;
+}
+$options = ['override_enabled'=>false, 'override_url'=>'/contact/'];
+check(crom_link_game(['jeuId'=>12]) === $initial, 'Désactivation : les liens d’origine ne sont pas restaurés depuis le cache');
+check($calls === $initialCalls, 'Désactivation : appel API superflu');
+echo "Destination unique : validation, rendus, shortcodes, médias, HelloAsso, API et désactivation : OK\n";
+
+// Le bloc Événement conserve les catégories et statuts, mais masque le type.
+$options = [];
+$badgedEvent = array_replace($event, ['type'=>'TYPE_EVENEMENT_MASQUE', 'categorie'=>['nom'=>'Convention'], 'en_cours'=>true, 'payant'=>true]);
+foreach (['carte', 'liste'] as $presentation) {
+    $html = crom_link_events_html([$badgedEvent], ['presentation'=>$presentation]);
+    check(str_contains($html, 'Convention'), 'Catégorie d’événement supprimée');
+    check(!str_contains($html, 'TYPE_EVENEMENT_MASQUE'), 'Type d’événement encore affiché en '.$presentation);
+    check(str_contains($html, 'badge-success') && str_contains($html, 'En cours'), 'Badge En cours supprimé');
+    check(str_contains($html, 'badge-warning') && str_contains($html, 'Payant'), 'Badge Payant supprimé');
+}
+check(crom_link_event_badges(['type'=>'TYPE_EVENEMENT_MASQUE']) === '', 'Badge vide ajouté à un événement sans statut');
+echo "Événements : type masqué, statuts En cours et Payant conservés : OK\n";

@@ -4,8 +4,37 @@ defined('ABSPATH') || exit;
 
 function crom_link_options(): array
 {
-    $defaults = ['url'=>untrailingslashit(preg_replace('#/site/?$#', '/crom', home_url())), 'cache'=>60, 'theme'=>'inherit'];
+    $defaults = ['url'=>untrailingslashit(preg_replace('#/site/?$#', '/crom', home_url())), 'cache'=>60, 'theme'=>'inherit', 'override_enabled'=>false, 'override_url'=>''];
     return array_replace($defaults, (array)get_option('crom_link_options', []));
+}
+
+/** Destination temporaire : URL HTTP(S) ou chemin absolu, paramètres et ancre autorisés. */
+function crom_link_sanitize_override_url(mixed $value): string
+{
+    if (! is_string($value)) {
+        return '';
+    }
+    $value = trim($value);
+    if ($value === '' || str_contains($value, '\\') || preg_match('/[\x00-\x20\x7f]/', $value)) {
+        return '';
+    }
+    $parsed = wp_parse_url($value);
+    $isPath = str_starts_with($value, '/') && ! str_starts_with($value, '//');
+    if (! is_array($parsed) || isset($parsed['user']) || isset($parsed['pass'])
+        || (! $isPath && (empty($parsed['host']) || ! in_array(strtolower($parsed['scheme'] ?? ''), ['http','https'], true)))) {
+        return '';
+    }
+    return esc_url_raw($value, ['http','https']);
+}
+
+/** Remplace uniquement les destinations publiques, jamais les appels API ni les médias. */
+function crom_link_destination_url(string $url): string
+{
+    $options = crom_link_options();
+    if (empty($options['override_enabled'])) {
+        return $url;
+    }
+    return crom_link_sanitize_override_url($options['override_url']) ?: $url;
 }
 
 /** Les chemins absolus sont relatifs au domaine, même si WordPress est dans /site. */
