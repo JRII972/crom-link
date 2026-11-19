@@ -1,2 +1,5 @@
 .DS_Store
 node_modules/
+
+# Dépendances ajoutées au ZIP par scripts/build-release.py.
+/plugin-update-checker/vendor/

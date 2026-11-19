@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CROM — Jeux et parties
  * Description: Bannières, jeux classés, prochaines parties et événements de CROM dans l’éditeur de blocs.
- * Version: 1.8.1
+ * Version: 1.8.2
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: windpress
@@ -19,8 +19,20 @@ require_once __DIR__.'/includes/page-templates.php';
 
 // Mises à jour automatiques depuis les releases GitHub du plugin.
 require_once __DIR__.'/plugin-update-checker/plugin-update-checker.php';
-\YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker('https://github.com/JRII972/crom-link/', CROM_LINK_FILE, 'crom-link')
-    ->getVcsApi()->enableReleaseAssets();
+if (class_exists('Parsedown') && class_exists('PucReadmeParser')) {
+    \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker('https://github.com/JRII972/crom-link/', CROM_LINK_FILE, 'crom-link')
+        ->getVcsApi()->enableReleaseAssets('/^crom-link-[0-9.]+\.zip$/', \YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api::REQUIRE_RELEASE_ASSETS);
+    // Seul le ZIP de release contient toutes les dépendances nécessaires.
+    add_filter('puc_vcs_update_detection_strategies-crom-link', static function (array $strategies): array {
+        return array_intersect_key($strategies, ['latest_release'=>true]);
+    });
+} else {
+    add_action('admin_notices', static function (): void {
+        if (current_user_can('update_plugins')) {
+            echo '<div class="notice notice-error"><p>CROM : le module de mise à jour est incomplet. Réinstallez le fichier crom-link-x.y.z.zip joint à la release GitHub, et non l’archive « Source code ».</p></div>';
+        }
+    });
+}
 
 // Keep the site presentation available while the WindPress CSS cache is absent.
 add_action('wp_enqueue_scripts', static function (): void {
@@ -39,10 +51,10 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 add_action('init', function (): void {
     $base = plugin_dir_url(CROM_LINK_FILE).'assets/';
-    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.8.1', true);
-    wp_register_script('crom-link-front', $base.'front.js', [], '1.8.1', true);
-    wp_register_style('crom-link', $base.'style.css', [], '1.8.1');
-    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.8.1');
+    wp_register_script('crom-link-editor', $base.'editor.js', ['wp-blocks', 'wp-data', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render', 'wp-api-fetch'], '1.8.2', true);
+    wp_register_script('crom-link-front', $base.'front.js', [], '1.8.2', true);
+    wp_register_style('crom-link', $base.'style.css', [], '1.8.2');
+    wp_register_style('crom-link-editor', $base.'editor.css', [], '1.8.2');
     $common = ['api_version'=>3, 'editor_script'=>'crom-link-editor', 'editor_style'=>'crom-link-editor', 'style'=>'crom-link', 'supports'=>['html'=>false, 'align'=>['wide','full']]];
     $schema = static fn ($type, $default) => ['type'=>$type, 'default'=>$default];
     register_block_type('crom/cover', $common + ['render_callback'=>'crom_link_cover', 'view_script'=>'crom-link-front', 'attributes'=>[
